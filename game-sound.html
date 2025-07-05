@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/png" href="favicon.ico">
+  <meta charset="UTF-8">
+  <title>Sound Reaction Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #caf0f8;
+      color: #03045e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    #status {
+      font-size: 1.3rem;
+      margin: 1rem;
+      background-color: #00b4d8;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #results {
+      font-size: 1.1rem;
+      margin-top: 1rem;
+    }
+    .button {
+      margin-top: 1.5rem;
+      padding: 0.6rem 1.2rem;
+      background-color: #00b4d8;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #0096c7;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🔊 Sound Reaction Test</h1>
+  <div id="status">Click or press SPACE to begin test</div>
+  <div id="results"></div>
+  <button class="button" id="play-again" style="display:none;">🔁 Play Again</button>
+  <button class="button" onclick="location.href='test.html'">← Back to Menu</button>
+
+  <script>
+    const statusDiv = document.getElementById("status");
+    const resultsDiv = document.getElementById("results");
+    const playAgainBtn = document.getElementById("play-again");
+
+    let audioCtx;
+    let startTime = 0;
+    let timeout;
+    let round = 0;
+    const maxRounds = 5;
+    let times = [];
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playBeep() {
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.7, audioCtx.currentTime);  // louder beep
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.3); // 300ms
+    }
+
+    function startRound() {
+      statusDiv.textContent = "Get ready...";
+      const delay = Math.random() * 2000 + 1000;
+      timeout = setTimeout(() => {
+        playBeep();
+        startTime = performance.now();
+        statusDiv.textContent = "👂 Hear the beep! Press SPACE or click!";
+        window.addEventListener("keydown", handleResponse);
+        window.addEventListener("mousedown", handleResponse);
+      }, delay);
+    }
+
+    function handleResponse(e) {
+      if (e.type === "keydown" && e.code !== "Space") return;
+
+      const reactionTime = Math.round(performance.now() - startTime);
+      times.push(reactionTime);
+      round++;
+
+      window.removeEventListener("keydown", handleResponse);
+      window.removeEventListener("mousedown", handleResponse);
+
+      if (round < maxRounds) {
+        statusDiv.textContent = `✔️ Reaction: ${reactionTime} ms`;
+        setTimeout(startRound, 1000);
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+      statusDiv.textContent = "🎉 Test finished!";
+      resultsDiv.innerHTML = `
+        🔢 Times: ${times.join(" ms, ")} ms<br>
+        📊 Average: <strong>${avg} ms</strong>
+      `;
+      playAgainBtn.style.display = "inline-block";
+    }
+
+    function resetTest() {
+      round = 0;
+      times = [];
+      resultsDiv.innerHTML = "";
+      playAgainBtn.style.display = "none";
+      startRound();
+    }
+
+    function startGame() {
+      initAudioContext();
+      audioCtx.resume().then(() => {
+        window.removeEventListener("keydown", startGame);
+        window.removeEventListener("mousedown", startGame);
+        resetTest();
+      });
+    }
+
+    playAgainBtn.addEventListener("click", () => {
+      resetTest();
+    });
+
+    // Wait for user interaction
+    window.addEventListener("keydown", startGame);
+    window.addEventListener("mousedown", startGame);
+  </script>
+
+</body>
+</html>

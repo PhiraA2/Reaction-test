@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/png" href="favicon.ico">
+  <meta charset="UTF-8" />
+  <title>Color Reaction Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #caf0f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      color: #03045e;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    #box {
+      width: 400px;
+      height: 250px;
+      background-color: #d00000; /* màu đỏ lúc chờ */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.8rem;
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    #stats {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    #back-btn {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #00b4d8;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    #back-btn:hover {
+      background-color: #0096c7;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🟢 Color Reaction Test</h1>
+  <div id="box" tabindex="0">Wait for green...</div>
+  <div id="stats"></div>
+  <button id="back-btn" onclick="location.href='test.html'">← Back to Menu</button>
+
+  <script>
+    const box = document.getElementById("box");
+    const stats = document.getElementById("stats");
+
+    let startTime;
+    let timeout;
+    let isGreen = false;
+    let round = 0;
+    const maxRounds = 5;
+    const times = [];
+
+    function startRound() {
+      box.textContent = "Wait for green...";
+      box.style.backgroundColor = "#d00000"; // đỏ luôn khi chờ
+      isGreen = false;
+
+      const delay = Math.random() * 2000 + 1000;
+
+      timeout = setTimeout(() => {
+        box.style.backgroundColor = "#38b000"; // xanh chuyển ngay
+        box.textContent = "Click or press Space!";
+        startTime = Date.now();
+        isGreen = true;
+      }, delay);
+    }
+
+    function recordReaction() {
+      if (!isGreen) {
+        clearTimeout(timeout);
+        box.textContent = "Too soon! Try again...";
+        box.style.backgroundColor = "#ef476f";
+        setTimeout(startRound, 1000);
+      } else {
+        const reaction = Date.now() - startTime;
+        times.push(reaction);
+        round++;
+
+        if (round < maxRounds) {
+          stats.innerHTML = `Round ${round} of ${maxRounds}<br>Last: ${reaction} ms`;
+          startRound();
+        } else {
+          showResults();
+        }
+      }
+    }
+
+    function showResults() {
+      const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+      box.textContent = "Test finished!";
+      box.style.backgroundColor = "#0077b6";
+      stats.innerHTML = `
+        ✅ Test complete!<br>
+        🔢 Times: ${times.join(" ms, ")} ms<br>
+        📊 Avg: ${avg} ms
+      `;
+      round = 0;
+      times.length = 0;
+    }
+
+    box.addEventListener("click", recordReaction);
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        recordReaction();
+      }
+    });
+
+    startRound();
+    box.focus();
+  </script>
+
+</body>
+</html>
